@@ -2,7 +2,7 @@
   "name": "shadcn-import-helper",
   "displayName": "Shadcn Import Helper",
   "description": "Helps install shadcn components when imported",
-  "version": "0.0.1",
+  "version": "1.1.0",
   "galleryBanner": {
     "color": "#007ACC",
     "theme": "dark"
