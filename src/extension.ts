@@ -2,8 +2,10 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
+let currentConfig: ShadcnConfig;
+
 interface ShadcnConfig {
-  componentFolder: string;
+  componentFolders: string[];
   importRegex: string;
   packageManager: "npm" | "pnpm" | "bun";
 }
@@ -11,14 +13,43 @@ interface ShadcnConfig {
 function getConfig(): ShadcnConfig {
   // Force reload the configuration
   const config = vscode.workspace.getConfiguration("shadcnImportHelper", null);
-  return {
-    componentFolder: config.get("componentFolder", "shadcn"),
-    importRegex: config.get(
-      "importRegex",
-      "import\\s*{([^}]+)}\\s*from\\s*[\"']@/components/shadcn/([^\"']+)[\"']"
-    ),
+  const componentFolders = config.get<string[]>("componentFolders", ["ui"]);
+
+  const folderPattern = componentFolders.join("|");
+  const generatedRegex = `import\\s*{([^}]+)}\\s*from\\s*["']@/components/(?:${folderPattern})/([^"']+)["']`;
+
+  const importRegex = config.get("importRegex", generatedRegex);
+
+  currentConfig = {
+    componentFolders,
+    importRegex,
     packageManager: config.get("packageManager", "npm"),
   };
+  return currentConfig;
+}
+
+// Function to update the regex when folders change
+async function updateRegexFromFolders() {
+  const config = vscode.workspace.getConfiguration("shadcnImportHelper", null);
+  const componentFolders = config.get<string[]>("componentFolders", [
+    "ui",
+    "shadcn",
+  ]);
+
+  const folderPattern = componentFolders.join("|");
+  const newRegex = `import\\s*{([^}]+)}\\s*from\\s*["']@/components/(?:${folderPattern})/([^"']+)["']`;
+
+  // Only update if the regex has changed
+  if (newRegex !== currentConfig.importRegex) {
+    await config.update(
+      "importRegex",
+      newRegex,
+      vscode.ConfigurationTarget.Global
+    );
+    vscode.window.showInformationMessage(
+      "Shadcn Import Helper: Import detection regex updated based on folder changes."
+    );
+  }
 }
 
 class ComponentCache {
@@ -118,7 +149,7 @@ class ComponentManager {
 
     const rootPath = workspaceFolders[0].uri.fsPath;
     const config = getConfig();
-    const componentPath = path.join("components", config.componentFolder);
+    const componentPath = path.join("components", ...config.componentFolders);
 
     const terminal = vscode.window.createTerminal("Shadcn Installer");
     terminal.show();
@@ -179,7 +210,7 @@ async function checkComponentInstalled(
   const componentPath = vscode.Uri.joinPath(
     rootPath,
     "components",
-    config.componentFolder,
+    ...config.componentFolders,
     `${componentName}.tsx`
   );
 
@@ -191,7 +222,7 @@ async function checkComponentInstalled(
     const jsxComponentPath = vscode.Uri.joinPath(
       rootPath,
       "components",
-      config.componentFolder,
+      ...config.componentFolders,
       `${componentName}.jsx`
     );
     try {
@@ -236,7 +267,7 @@ async function scanDirectory(uri: vscode.Uri): Promise<string[]> {
       const document = await vscode.workspace.openTextDocument(filePath);
       components.push(...parseImports(document));
     } else if (type === vscode.FileType.Directory) {
-      const subDirUri = vscode.Uri.joinPath(uri, name);
+      const subDirUri = vscode.Uri.joinPath(uri, name as any);
       components.push(...(await scanDirectory(subDirUri)));
     }
   }
@@ -259,6 +290,7 @@ async function scanWorkspace(): Promise<string[]> {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  currentConfig = getConfig();
   console.log("Activating shadcn-import-helper extension");
   console.log("Workspace folders:", vscode.workspace.workspaceFolders);
   console.log("Extension path:", context.extensionPath);
@@ -270,6 +302,16 @@ export function activate(context: vscode.ExtensionContext) {
         componentManager.installPendingComponents();
       }
     )
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("shadcnImportHelper.componentFolders")) {
+        updateRegexFromFolders();
+      }
+      // Reload the config after any changes
+      currentConfig = getConfig();
+    })
   );
 
   context.subscriptions.push(

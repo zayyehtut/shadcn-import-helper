@@ -7,7 +7,8 @@ Shadcn Import Helper is a Visual Studio Code extension that simplifies the proce
 - Right-click on files or folders to scan for shadcn component imports
 - Automatically detects uninstalled components
 - Installs multiple components at once
-- Configurable component folder and import detection
+- Configurable component folders and import detection
+- Dynamic update of import detection based on folder configuration
 - Status bar item for easy access to pending component installations
 - Supports npm, pnpm, and Bun for component installation
 - Workspace-wide scanning for shadcn component imports
@@ -33,11 +34,25 @@ Alternatively, you can use the command palette (Ctrl+Shift+P or Cmd+Shift+P on m
 
 This extension contributes the following settings:
 
-- `shadcnImportHelper.componentFolder`: Specify the folder name for shadcn components (e.g., 'ui', 'shadcn', 'custom-ui'). Default is 'shadcn'.
-- `shadcnImportHelper.importRegex`: Regular expression pattern for detecting component imports. Default is `import\s*{([^}]+)}\s*from\s*["']@/components/shadcn/([^"']+)["']`.
+- `shadcnImportHelper.componentFolders`: An array of folder names where shadcn components might be stored. Default is `["ui", "shadcn"]`. Changing this setting will automatically update the import detection regex.
+- `shadcnImportHelper.importRegex`: Regular expression pattern for detecting component imports. This is automatically updated when `componentFolders` changes, but can be manually overridden if needed.
 - `shadcnImportHelper.packageManager`: Specify the package manager to use for installing components. Options are 'npm', 'pnpm', or 'bun'. Default is 'npm'.
 
 You can modify these settings in your VS Code settings.json file or through the Settings UI.
+
+### Dynamic Import Detection
+
+The extension automatically updates its import detection regex when you change the `componentFolders` setting. This means you can easily add or remove component folders without needing to manually update the regex.
+
+For example, if you update your settings to:
+
+```json
+"shadcnImportHelper.componentFolders": ["ui", "shadcn", "custom-ui"]
+```
+
+The extension will automatically update its import detection to work with components imported from "@/components/ui/", "@/components/shadcn/", and "@/components/custom-ui/".
+
+If you need to use a custom regex that doesn't follow this pattern, you can still manually set the `importRegex` setting, which will override the automatic behavior.
 
 ## Requirements
 
@@ -58,6 +73,12 @@ This project is licensed under the MIT License.
 
 ## Release Notes
 
+### 1.2.0
+
+- Implemented dynamic regex update based on component folder configuration
+- Added support for multiple component folders
+- Improved error handling and user feedback
+
 ### 1.1.0
 
 - Added support for pnpm and Bun package managers
@@ -67,7 +88,7 @@ This project is licensed under the MIT License.
 
 ### 1.0.0
 
-Initial release of Shadcn Import Helper
+- Initial release of Shadcn Import Helper
 
 ---
 
