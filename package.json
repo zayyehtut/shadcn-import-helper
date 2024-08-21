@@ -1,0 +1,62 @@
+{
+  "name": "shadcn-import-helper",
+  "displayName": "Shadcn Import Helper",
+  "description": "Helps install shadcn components when imported",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.installShadcnComponents",
+    "onCommand:extension.installPendingShadcnComponents"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.installShadcnComponents",
+        "title": "Install Shadcn Components"
+      },
+      {
+        "command": "extension.installPendingShadcnComponents",
+        "title": "Install Pending Shadcn Components"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "extension.installShadcnComponents",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Shadcn Import Helper",
+      "properties": {
+        "shadcnImportHelper.componentFolder": {
+          "type": "string",
+          "default": "shadcn",
+          "description": "Specify the folder name for shadcn components (e.g., 'ui', 'shadcn', 'custom-ui')"
+        },
+        "shadcnImportHelper.importRegex": {
+          "type": "string",
+          "default": "import\\s*{([^}]+)}\\s*from\\s*[\"']@/components/shadcn/([^\"']+)[\"']",
+          "description": "Regular expression pattern for detecting component imports"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "14.x",
+    "typescript": "^4.3.5"
+  }
+}
