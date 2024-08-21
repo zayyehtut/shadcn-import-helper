@@ -31,15 +31,11 @@ function getConfig(): ShadcnConfig {
 // Function to update the regex when folders change
 async function updateRegexFromFolders() {
   const config = vscode.workspace.getConfiguration("shadcnImportHelper", null);
-  const componentFolders = config.get<string[]>("componentFolders", [
-    "ui",
-    "shadcn",
-  ]);
+  const componentFolders = config.get<string[]>("componentFolders", ["ui"]);
 
   const folderPattern = componentFolders.join("|");
   const newRegex = `import\\s*{([^}]+)}\\s*from\\s*["']@/components/(?:${folderPattern})/([^"']+)["']`;
 
-  // Only update if the regex has changed
   if (newRegex !== currentConfig.importRegex) {
     await config.update(
       "importRegex",
@@ -149,7 +145,8 @@ class ComponentManager {
 
     const rootPath = workspaceFolders[0].uri.fsPath;
     const config = getConfig();
-    const componentPath = path.join("components", ...config.componentFolders);
+    const installFolder = config.componentFolders[0] || "ui";
+    const componentPath = path.join("components", installFolder);
 
     const terminal = vscode.window.createTerminal("Shadcn Installer");
     terminal.show();
@@ -177,13 +174,13 @@ class ComponentManager {
         },
         async (progress) => {
           progress.report({ increment: 0 });
-          await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
+          await new Promise((resolve) => setTimeout(resolve, 5000));
           progress.report({ increment: 100 });
         }
       );
 
       vscode.window.showInformationMessage(
-        `Components installed successfully: ${components}`
+        `Components installed successfully in ${componentPath}: ${components}`
       );
     } catch (error) {
       vscode.window.showErrorMessage(
@@ -207,31 +204,41 @@ async function checkComponentInstalled(
   if (!workspaceFolders) return false;
 
   const rootPath = workspaceFolders[0].uri;
-  const componentPath = vscode.Uri.joinPath(
-    rootPath,
-    "components",
-    ...config.componentFolders,
-    `${componentName}.tsx`
-  );
+  const checkedFolders: string[] = [];
 
-  try {
-    await vscode.workspace.fs.stat(componentPath);
-    return true;
-  } catch {
-    // Also check for .jsx files
-    const jsxComponentPath = vscode.Uri.joinPath(
+  for (const folder of config.componentFolders) {
+    const componentPath = vscode.Uri.joinPath(
       rootPath,
       "components",
-      ...config.componentFolders,
-      `${componentName}.jsx`
+      folder,
+      `${componentName}.tsx`
     );
+
     try {
-      await vscode.workspace.fs.stat(jsxComponentPath);
+      await vscode.workspace.fs.stat(componentPath);
       return true;
     } catch {
-      return false;
+      // Also check for .jsx files
+      const jsxComponentPath = vscode.Uri.joinPath(
+        rootPath,
+        "components",
+        ...config.componentFolders,
+        `${componentName}.jsx`
+      );
+      try {
+        await vscode.workspace.fs.stat(jsxComponentPath);
+        return true;
+      } catch {
+        checkedFolders.push(folder);
+      }
     }
   }
+  console.log(
+    `Component ${componentName} not found in folders: ${checkedFolders.join(
+      ", "
+    )}`
+  );
+  return false;
 }
 
 async function isComponentInstalled(componentName: string): Promise<boolean> {
@@ -397,15 +404,15 @@ export function activate(context: vscode.ExtensionContext) {
           async (progress) => {
             try {
               const components = await scanWorkspace();
+              let newComponentsCount = 0;
               for (const component of components) {
-                if (!(await isComponentInstalled(component))) {
+                if (!(await checkComponentInstalled(component))) {
                   componentManager.addComponent(component);
+                  newComponentsCount++;
                 }
               }
               vscode.window.showInformationMessage(
-                `Found ${
-                  components.length
-                } shadcn components. ${componentManager.getPendingCount()} need to be installed.`
+                `Found ${components.length} shadcn components. ${newComponentsCount} new components added to installation queue.`
               );
             } catch (error) {
               vscode.window.showErrorMessage(
@@ -421,10 +428,12 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration("shadcnImportHelper")) {
+        updateRegexFromFolders();
+        currentConfig = getConfig();
+        ComponentCache.getInstance().clearCache();
         vscode.window.showInformationMessage(
           "Shadcn Import Helper configuration updated. Reloading..."
         );
-        ComponentCache.getInstance().clearCache();
       }
     })
   );
