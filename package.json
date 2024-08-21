@@ -3,6 +3,16 @@
   "displayName": "Shadcn Import Helper",
   "description": "Helps install shadcn components when imported",
   "version": "0.0.1",
+  "galleryBanner": {
+    "color": "#007ACC",
+    "theme": "dark"
+  },
+  "icon": "assets/icon.png",
+  "publisher": "ZayYeHtut",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zayyehtut/shadcn-import-helper"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -18,11 +28,11 @@
     "commands": [
       {
         "command": "extension.installShadcnComponents",
-        "title": "Install Shadcn Components"
+        "title": "Shadcn: Install Components"
       },
       {
-        "command": "extension.installPendingShadcnComponents",
-        "title": "Install Pending Shadcn Components"
+        "command": "extension.scanWorkspaceForShadcnComponents",
+        "title": "Shadcn: Scan Workspace for Components"
       }
     ],
     "menus": {
@@ -45,6 +55,16 @@
           "type": "string",
           "default": "import\\s*{([^}]+)}\\s*from\\s*[\"']@/components/shadcn/([^\"']+)[\"']",
           "description": "Regular expression pattern for detecting component imports"
+        },
+        "shadcnImportHelper.packageManager": {
+          "type": "string",
+          "enum": [
+            "npm",
+            "pnpm",
+            "bun"
+          ],
+          "default": "npm",
+          "description": "The package manager to use for installing shadcn components"
         }
       }
     }

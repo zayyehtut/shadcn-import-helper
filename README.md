@@ -9,7 +9,9 @@ Shadcn Import Helper is a Visual Studio Code extension that simplifies the proce
 - Installs multiple components at once
 - Configurable component folder and import detection
 - Status bar item for easy access to pending component installations
-- Currently supports npm for component installation (support for pnpm and Bun coming soon)
+- Supports npm, pnpm, and Bun for component installation
+- Workspace-wide scanning for shadcn component imports
+- Caching of installed components for improved performance
 
 ## Installation
 
@@ -25,19 +27,22 @@ Shadcn Import Helper is a Visual Studio Code extension that simplifies the proce
 3. The extension will scan for shadcn component imports and add uninstalled components to the queue
 4. Click on the status bar item to install all queued components
 
+Alternatively, you can use the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS) and search for "Shadcn: Scan Workspace for Components" to scan your entire workspace for shadcn component imports.
+
 ## Configuration
 
 This extension contributes the following settings:
 
 - `shadcnImportHelper.componentFolder`: Specify the folder name for shadcn components (e.g., 'ui', 'shadcn', 'custom-ui'). Default is 'shadcn'.
 - `shadcnImportHelper.importRegex`: Regular expression pattern for detecting component imports. Default is `import\s*{([^}]+)}\s*from\s*["']@/components/shadcn/([^"']+)["']`.
+- `shadcnImportHelper.packageManager`: Specify the package manager to use for installing components. Options are 'npm', 'pnpm', or 'bun'. Default is 'npm'.
 
 You can modify these settings in your VS Code settings.json file or through the Settings UI.
 
 ## Requirements
 
 - This extension requires that you have [shadcn/ui](https://ui.shadcn.com/) set up in your project.
-- Make sure you have Node.js and npm installed on your system.
+- Make sure you have Node.js and your chosen package manager (npm, pnpm, or Bun) installed on your system.
 
 ## Known Issues
 
@@ -52,6 +57,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License.
 
 ## Release Notes
+
+### 1.1.0
+
+- Added support for pnpm and Bun package managers
+- Implemented workspace-wide scanning for shadcn components
+- Improved performance with component installation caching
+- Enhanced error handling and user feedback
 
 ### 1.0.0
 
