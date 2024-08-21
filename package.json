@@ -46,15 +46,21 @@
     "configuration": {
       "title": "Shadcn Import Helper",
       "properties": {
-        "shadcnImportHelper.componentFolder": {
-          "type": "string",
-          "default": "ui",
-          "description": "Specify the folder name for shadcn components (e.g., 'ui', 'shadcn', 'custom-ui')"
+        "shadcnImportHelper.componentFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "ui",
+            "shadcn"
+          ],
+          "description": "An array of folder names where shadcn components might be stored. Changing this will automatically update the import detection regex."
         },
         "shadcnImportHelper.importRegex": {
           "type": "string",
-          "default": "import\\s*{([^}]+)}\\s*from\\s*[\"']@/components/ui/([^\"']+)[\"']",
-          "description": "Regular expression pattern for detecting component imports"
+          "default": "import\\s*{([^}]+)}\\s*from\\s*[\"']@/components/(?:ui|shadcn)/([^\"']+)[\"']",
+          "description": "Regular expression to match shadcn component imports. This is automatically updated when componentFolders changes, but can be manually overridden."
         },
         "shadcnImportHelper.packageManager": {
           "type": "string",
