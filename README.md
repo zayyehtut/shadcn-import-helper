@@ -34,25 +34,21 @@ Alternatively, you can use the command palette (Ctrl+Shift+P or Cmd+Shift+P on m
 
 This extension contributes the following settings:
 
-- `shadcnImportHelper.componentFolders`: An array of folder names where shadcn components might be stored. Default is `["ui", "shadcn"]`. Changing this setting will automatically update the import detection regex.
-- `shadcnImportHelper.importRegex`: Regular expression pattern for detecting component imports. This is automatically updated when `componentFolders` changes, but can be manually overridden if needed.
+- `shadcnImportHelper.componentFolder`: Specify the folder name where shadcn components are stored (e.g., 'ui', 'shadcn', 'components'). Default is 'ui'.
+- `shadcnImportHelper.importRegex`: Regular expression pattern for detecting component imports. This is automatically updated when `componentFolder` changes, but can be manually overridden if needed.
 - `shadcnImportHelper.packageManager`: Specify the package manager to use for installing components. Options are 'npm', 'pnpm', or 'bun'. Default is 'npm'.
 
 You can modify these settings in your VS Code settings.json file or through the Settings UI.
 
-### Dynamic Import Detection
+### Custom Component Folder
 
-The extension automatically updates its import detection regex when you change the `componentFolders` setting. This means you can easily add or remove component folders without needing to manually update the regex.
-
-For example, if you update your settings to:
+If you're using a custom folder name for your shadcn components, you can specify it in the `shadcnImportHelper.componentFolder` setting. For example:
 
 ```json
-"shadcnImportHelper.componentFolders": ["ui", "shadcn", "custom-ui"]
+"shadcnImportHelper.componentFolder": "my-ui-components"
 ```
 
-The extension will automatically update its import detection to work with components imported from "@/components/ui/", "@/components/shadcn/", and "@/components/custom-ui/".
-
-If you need to use a custom regex that doesn't follow this pattern, you can still manually set the `importRegex` setting, which will override the automatic behavior.
+This will allow the extension to detect imports from and install components to the specified folder.
 
 ## Requirements
 
@@ -72,6 +68,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License.
 
 ## Release Notes
+
+### 1.3.0
+
+- Simplified component folder configuration for easier setup and use
+- Added support for custom component folder names
+- Improved performance and reliability of component detection and installation
+- Enhanced error handling and user feedback
 
 ### 1.2.0
 

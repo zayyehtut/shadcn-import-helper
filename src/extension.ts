@@ -5,29 +5,23 @@ import * as path from "path";
 let currentConfig: ShadcnConfig;
 
 interface ShadcnConfig {
-  componentFolders: string[];
+  componentFolder: string;
   importRegex: string;
   packageManager: "npm" | "pnpm" | "bun";
 }
 
 function getConfig(): ShadcnConfig {
-  // Force reload the configuration
   const config = vscode.workspace.getConfiguration("shadcnImportHelper", null);
-  const componentFolders = config.get<string[]>("componentFolders", ["ui"]);
+  const componentFolder = config.get<string>("componentFolder", "ui");
 
-  const folderPattern = componentFolders.join("|");
-  const generatedRegex = `import\\s*{([^}]+)}\\s*from\\s*["']@/components/(?:${folderPattern})/([^"']+)["']`;
+  const generatedRegex = `import\\s*{([^}]+)}\\s*from\\s*["']@/components/${componentFolder}/([^"']+)["']`;
 
-  const importRegex = config.get("importRegex", generatedRegex);
-
-  currentConfig = {
-    componentFolders,
-    importRegex,
+  return {
+    componentFolder,
+    importRegex: config.get("importRegex", generatedRegex),
     packageManager: config.get("packageManager", "npm"),
   };
-  return currentConfig;
 }
-
 // Function to update the regex when folders change
 async function updateRegexFromFolders() {
   const config = vscode.workspace.getConfiguration("shadcnImportHelper", null);
@@ -145,9 +139,7 @@ class ComponentManager {
 
     const rootPath = workspaceFolders[0].uri.fsPath;
     const config = getConfig();
-    const installFolder = config.componentFolders[0] || "ui";
-    const componentPath = path.join("components", installFolder);
-
+    const componentPath = path.join("components", config.componentFolder);
     const terminal = vscode.window.createTerminal("Shadcn Installer");
     terminal.show();
 
@@ -204,41 +196,33 @@ async function checkComponentInstalled(
   if (!workspaceFolders) return false;
 
   const rootPath = workspaceFolders[0].uri;
-  const checkedFolders: string[] = [];
+  const componentPath = vscode.Uri.joinPath(
+    rootPath,
+    "components",
+    config.componentFolder,
+    `${componentName}.tsx`
+  );
 
-  for (const folder of config.componentFolders) {
-    const componentPath = vscode.Uri.joinPath(
+  try {
+    await vscode.workspace.fs.stat(componentPath);
+    return true;
+  } catch {
+    const jsxComponentPath = vscode.Uri.joinPath(
       rootPath,
       "components",
-      folder,
-      `${componentName}.tsx`
+      config.componentFolder,
+      `${componentName}.jsx`
     );
-
     try {
-      await vscode.workspace.fs.stat(componentPath);
+      await vscode.workspace.fs.stat(jsxComponentPath);
       return true;
     } catch {
-      // Also check for .jsx files
-      const jsxComponentPath = vscode.Uri.joinPath(
-        rootPath,
-        "components",
-        ...config.componentFolders,
-        `${componentName}.jsx`
+      console.log(
+        `Component ${componentName} not found in folder: ${config.componentFolder}`
       );
-      try {
-        await vscode.workspace.fs.stat(jsxComponentPath);
-        return true;
-      } catch {
-        checkedFolders.push(folder);
-      }
+      return false;
     }
   }
-  console.log(
-    `Component ${componentName} not found in folders: ${checkedFolders.join(
-      ", "
-    )}`
-  );
-  return false;
 }
 
 async function isComponentInstalled(componentName: string): Promise<boolean> {
@@ -427,12 +411,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("shadcnImportHelper")) {
-        updateRegexFromFolders();
+      if (event.affectsConfiguration("shadcnImportHelper.componentFolder")) {
         currentConfig = getConfig();
         ComponentCache.getInstance().clearCache();
         vscode.window.showInformationMessage(
-          "Shadcn Import Helper configuration updated. Reloading..."
+          "Shadcn Import Helper: Component folder updated. Reloading configuration..."
         );
       }
     })
